@@ -1,15 +1,22 @@
+
 import pymysql
+import hashlib
+import json
+import logging
+import sqlite3
 import sys
 import time
-import hashlib
-
+import typing
 from datetime import datetime
+
+LOGGER = logging.getLogger(__name__)
+
 
 def Conn(database):
     if database:
         print("[+] Inserting into Database mysql: " + str(database))
         conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxxxxx",db="twitter")
-        print("conection done...");
+        print("conection done...")
         #conn = init(database)
         #if isinstance(conn, str):
         #    print(str)
@@ -54,7 +61,7 @@ def init(db):
 
         table_tweets = """
             CREATE TABLE IF NOT EXISTS
-                tweets (
+                tweets(
                     id integer not null,
                     id_str text not null,
                     tweet text default '',
@@ -243,6 +250,16 @@ def tweets(conn, Tweet, config):
     try:
         time_ms = round(time.time()*1000)
         cursor = conn.cursor()
+        try:
+            mentions = ",".join(Tweet.mentions)
+        except TypeError as err:
+            LOGGER.exception(err)
+            mentions = json.dumps(Tweet.mentions)
+        try:
+            place = ",".join(Tweet.place)
+        except TypeError as err:
+            LOGGER.exception(err)
+            place = json.dumps(Tweet.place)
         entry = (Tweet.id,
                     Tweet.id_str,
                     Tweet.tweet,
@@ -251,7 +268,7 @@ def tweets(conn, Tweet, config):
                     Tweet.datestamp,
                     Tweet.timestamp,
                     Tweet.timezone,
-                    Tweet.place,
+                    place,
                     Tweet.replies_count,
                     Tweet.likes_count,
                     Tweet.retweets_count,
@@ -260,7 +277,7 @@ def tweets(conn, Tweet, config):
                     Tweet.username,
                     Tweet.name,
                     Tweet.link,
-                    ",".join(Tweet.mentions),
+                    mentions,
                     ",".join(Tweet.hashtags),
                     ",".join(Tweet.cashtags),
                     ",".join(Tweet.urls),
@@ -283,13 +300,42 @@ def tweets(conn, Tweet, config):
 
         if Tweet.retweet:
             query = 'INSERT INTO retweets VALUES((%s),(%s),(%s),(%s),(%s))'
-            _d = datetime.timestamp(datetime.strptime(Tweet.retweet_date, "%Y-%m-%d %H:%M:%S"))
+
+            def get_datetime(inp):
+                return datetime.timestamp(datetime.strptime(inp, "%Y-%m-%d %H:%M:%S"))
+
+            try:
+                _d = get_datetime(Tweet.retweet_date)
+            except ValueError as err:
+                if Tweet.retweet_date.endswith(' WITA'):
+                    LOGGER.exception(err)
+                    _d = get_datetime(Tweet.retweet_date.rsplit(' WITA', 1)[0])
+                else:
+                    raise err
             cursor.execute(query, (int(Tweet.user_rt_id), Tweet.user_rt, Tweet.id, int(Tweet.retweet_id), _d))
 
         if Tweet.reply_to:
             for reply in Tweet.reply_to:
                 query = 'INSERT INTO replies VALUES((%s),(%s),(%s))'
-                cursor.execute(query, (Tweet.id, int(reply['user_id']), reply['username']))
+
+                def get_value(dict_inp: typing.Dict[str, typing.Any], key: str, default_value: typing.Any):
+                    """get value from key with default_value.
+                    .. note::
+                        
+                        it may be better to replace this with default :py:class:`dict.get`
+                    """
+                    try:
+                        return dict_inp[key]
+                    except KeyError as err:
+                        if key not in dict_inp:
+                            LOGGER.exception(err)
+                            return default_value
+                        else:
+                            raise err
+
+                reply_user_id = int(get_value(reply, 'user_id', 0))
+                reply_username = get_value(reply, 'username', '')
+                cursor.execute(query, (Tweet.id, reply_user_id, reply_username))
 
         conn.commit()
     except pymysql.IntegrityError:
