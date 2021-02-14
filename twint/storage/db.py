@@ -12,12 +12,10 @@ from datetime import datetime
 LOGGER = logging.getLogger(__name__)
 
 
-def Conn(database):
-    if database:
-        print("[+] Inserting into Database mysql: " + str(database))
-        conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxxxxx",db="twitter")
-        print("conection done...")
-        #conn = init(database)
+def Conn(config):
+    if config.Database:
+        print("[+] Inserting into Database mysql: " + str(config.Database))
+        conn = init(config.Database, config.Batch, config.YYYYMMDD)
         #if isinstance(conn, str):
         #    print(str)
         #    sys.exit(1)
@@ -26,9 +24,9 @@ def Conn(database):
 
     return conn
 
-def init(db):
+def init(db, batch, YYYYMMDD):
     try:
-        conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxxxxx",db="twitter")
+        conn = pymysql.connect(host="172.30.0.224",user="ozaki",password="Tenseibiku1",db="twitter")
         cursor = conn.cursor()
 
         table_users = """
@@ -182,6 +180,44 @@ def init(db):
                 );
         """
         cursor.execute(table_following_names)
+        if batch:
+            table_tweets = f"""
+                CREATE TABLE IF NOT EXISTS
+                    tweets_disney_{YYYYMMDD}(
+                        id integer not null,
+                        id_str text not null,
+                        tweet text default '',
+                        conversation_id text not null,
+                        created_at integer not null,
+                        date text not null,
+                        time text not null,
+                        timezone text not null,
+                        place text default '',
+                        replies_count integer,
+                        likes_count integer,
+                        retweets_count integer,
+                        user_id integer not null,
+                        user_id_str text not null,
+                        screen_name text not null,
+                        name text default '',
+                        link text,
+                        mentions text,
+                        hashtags text,
+                        cashtags text,
+                        urls text,
+                        photos text,
+                        quote_url text,
+                        video integer,
+                        geo text,
+                        near text,
+                        source text,
+                        time_update integer not null,
+                        `translate` text default '',
+                        trans_src text default '',
+                        trans_dest text default '',
+                        PRIMARY KEY (id)
+                    );
+            """
 
         return conn
     except Exception as e:
@@ -192,7 +228,6 @@ def fTable(Followers):
         table = "followers_names"
     else:
         table = "following_names"
-
     return table
 
 def uTable(Followers):
@@ -200,7 +235,6 @@ def uTable(Followers):
         table = "followers"
     else:
         table = "following"
-
     return table
 
 def follow(conn, Username, Followers, User):
@@ -246,6 +280,13 @@ def user(conn, config, User):
     except pymysql.IntegrityError:
         pass
 
+def tweets_table(batch, YYYYMMDD):
+    if batch:
+        table = f"tweets_disney_{YYYYMMDD}"
+    else:
+        table = "tweets"
+    return table
+    
 def tweets(conn, Tweet, config):
     try:
         time_ms = round(time.time()*1000)
@@ -291,7 +332,8 @@ def tweets(conn, Tweet, config):
                     Tweet.translate,
                     Tweet.trans_src,
                     Tweet.trans_dest)
-        cursor.execute('INSERT INTO tweets VALUES((%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s))', entry)
+        table = tweets_table(config.Batch, config.YYYYMMDD)
+        cursor.execute(f'INSERT INTO {table} VALUES((%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s))', entry)
 
 
         if config.Favorites:
