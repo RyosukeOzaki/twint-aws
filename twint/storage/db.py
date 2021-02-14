@@ -25,10 +25,48 @@ def Conn(config):
     return conn
 
 def init(db, batch, YYYYMMDD):
+    conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxx",db=db)
+    cursor = conn.cursor()
+    if batch:
+        table_tweets_batch = f"""
+                CREATE TABLE IF NOT EXISTS
+                    tweets_disney_{YYYYMMDD}(
+                        id integer not null,
+                        id_str text not null,
+                        tweet text default '',
+                        conversation_id text not null,
+                        created_at integer not null,
+                        date text not null,
+                        time text not null,
+                        timezone text not null,
+                        place text default '',
+                        replies_count integer,
+                        likes_count integer,
+                        retweets_count integer,
+                        user_id integer not null,
+                        user_id_str text not null,
+                        screen_name text not null,
+                        name text default '',
+                        link text,
+                        mentions text,
+                        hashtags text,
+                        cashtags text,
+                        urls text,
+                        photos text,
+                        quote_url text,
+                        video integer,
+                        geo text,
+                        near text,
+                        source text,
+                        time_update integer not null,
+                        `translate` text default '',
+                        trans_src text default '',
+                        trans_dest text default '',
+                        PRIMARY KEY (id)
+                    );
+            """
+        cursor.execute(table_tweets_batch)
     try:
-        conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxx",db=db)
-        cursor = conn.cursor()
-
         table_users = """
             CREATE TABLE IF NOT EXISTS
                 users(
@@ -180,45 +218,6 @@ def init(db, batch, YYYYMMDD):
                 );
         """
         cursor.execute(table_following_names)
-        if batch:
-            table_tweets_batch = f"""
-                CREATE TABLE IF NOT EXISTS
-                    tweets_disney_{YYYYMMDD}(
-                        id integer not null,
-                        id_str text not null,
-                        tweet text default '',
-                        conversation_id text not null,
-                        created_at integer not null,
-                        date text not null,
-                        time text not null,
-                        timezone text not null,
-                        place text default '',
-                        replies_count integer,
-                        likes_count integer,
-                        retweets_count integer,
-                        user_id integer not null,
-                        user_id_str text not null,
-                        screen_name text not null,
-                        name text default '',
-                        link text,
-                        mentions text,
-                        hashtags text,
-                        cashtags text,
-                        urls text,
-                        photos text,
-                        quote_url text,
-                        video integer,
-                        geo text,
-                        near text,
-                        source text,
-                        time_update integer not null,
-                        `translate` text default '',
-                        trans_src text default '',
-                        trans_dest text default '',
-                        PRIMARY KEY (id)
-                    );
-            """
-            cursor.execute(table_tweets_batch)
         return conn
     except Exception as e:
         return str(e)
