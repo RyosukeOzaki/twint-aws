@@ -1,4 +1,4 @@
-import sqlite3
+import pymysql
 import sys
 import time
 import hashlib
@@ -7,11 +7,13 @@ from datetime import datetime
 
 def Conn(database):
     if database:
-        print("[+] Inserting into Database: " + str(database))
-        conn = init(database)
-        if isinstance(conn, str): # error
-            print(conn)
-            sys.exit(1)
+        print("[+] Inserting into Database mysql: " + str(database))
+        conn = pymysql.connect(host="172.30.0.224",user="ozaki",password="Tenseibiku1",db="twitter")
+        print("conection done...");
+        #conn = init(database)
+        #if isinstance(conn, str):
+        #    print(str)
+        #    sys.exit(1)
     else:
         conn = ""
 
@@ -19,7 +21,7 @@ def Conn(database):
 
 def init(db):
     try:
-        conn = sqlite3.connect(db)
+        conn = pymysql.connect(host="172.30.0.224",user="ozaki",password="Tenseibiku1",db="twitter")
         cursor = conn.cursor()
 
         table_users = """
@@ -56,7 +58,6 @@ def init(db):
                     id integer not null,
                     id_str text not null,
                     tweet text default '',
-                    language text default '',
                     conversation_id text not null,
                     created_at integer not null,
                     date text not null,
@@ -76,7 +77,6 @@ def init(db):
                     cashtags text,
                     urls text,
                     photos text,
-                    thumbnail text,
                     quote_url text,
                     video integer,
                     geo text,
@@ -98,7 +98,7 @@ def init(db):
                     username text not null,
                     tweet_id integer not null,
                     retweet_id integer not null,
-                    retweet_date integer,
+                    retweet_date integer not null,
                     CONSTRAINT retweets_pk PRIMARY KEY(user_id, tweet_id),
                     CONSTRAINT user_id_fk FOREIGN KEY(user_id) REFERENCES users(id),
                     CONSTRAINT tweet_id_fk FOREIGN KEY(tweet_id) REFERENCES tweets(id)
@@ -202,15 +202,15 @@ def follow(conn, Username, Followers, User):
         cursor = conn.cursor()
         entry = (User, time_ms, Username,)
         table = fTable(Followers)
-        query = f"INSERT INTO {table} VALUES(?,?,?)"
+        query = f"INSERT INTO {table} VALUES((%s),(%s),(%s))"
         cursor.execute(query, entry)
         conn.commit()
-    except sqlite3.IntegrityError:
+    except pymysql.IntegrityError:
         pass
 
 def get_hash_id(conn, id):
     cursor = conn.cursor()
-    cursor.execute('SELECT hex_dig FROM users WHERE id = ? LIMIT 1', (id,))
+    cursor.execute('SELECT hex_dig FROM users WHERE id = (%s) LIMIT 1', (id,))
     resultset = cursor.fetchall()
     return resultset[0][0] if resultset else -1
 
@@ -225,18 +225,18 @@ def user(conn, config, User):
         old_hash = get_hash_id(conn, User.id)
 
         if old_hash == -1 or old_hash != hex_dig:
-            query = f"INSERT INTO users VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            query = f"INSERT INTO users VALUES((%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s))"
             cursor.execute(query, entry)
         else:
             pass
 
         if config.Followers or config.Following:
             table = uTable(config.Followers)
-            query = f"INSERT INTO {table} VALUES(?,?)"
+            query = f"INSERT INTO {table} VALUES((%s),(%s))"
             cursor.execute(query, (config.User_id, int(User.id)))
 
         conn.commit()
-    except sqlite3.IntegrityError:
+    except pymysql.IntegrityError:
         pass
 
 def tweets(conn, Tweet, config):
@@ -246,7 +246,6 @@ def tweets(conn, Tweet, config):
         entry = (Tweet.id,
                     Tweet.id_str,
                     Tweet.tweet,
-                    Tweet.lang,
                     Tweet.conversation_id,
                     Tweet.datetime,
                     Tweet.datestamp,
@@ -266,7 +265,6 @@ def tweets(conn, Tweet, config):
                     ",".join(Tweet.cashtags),
                     ",".join(Tweet.urls),
                     ",".join(Tweet.photos),
-                    Tweet.thumbnail,
                     Tweet.quote_url,
                     Tweet.video,
                     Tweet.geo,
@@ -276,22 +274,23 @@ def tweets(conn, Tweet, config):
                     Tweet.translate,
                     Tweet.trans_src,
                     Tweet.trans_dest)
-        cursor.execute('INSERT INTO tweets VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', entry)
+        cursor.execute('INSERT INTO tweets VALUES((%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s))', entry)
+
 
         if config.Favorites:
-            query = 'INSERT INTO favorites VALUES(?,?)'
+            query = 'INSERT INTO favorites VALUES((%s),(%s))'
             cursor.execute(query, (config.User_id, Tweet.id))
 
         if Tweet.retweet:
-            query = 'INSERT INTO retweets VALUES(?,?,?,?,?)'
+            query = 'INSERT INTO retweets VALUES((%s),(%s),(%s),(%s),(%s))'
             _d = datetime.timestamp(datetime.strptime(Tweet.retweet_date, "%Y-%m-%d %H:%M:%S"))
             cursor.execute(query, (int(Tweet.user_rt_id), Tweet.user_rt, Tweet.id, int(Tweet.retweet_id), _d))
 
         if Tweet.reply_to:
             for reply in Tweet.reply_to:
-                query = 'INSERT INTO replies VALUES(?,?,?)'
+                query = 'INSERT INTO replies VALUES((%s),(%s),(%s))'
                 cursor.execute(query, (Tweet.id, int(reply['user_id']), reply['username']))
 
         conn.commit()
-    except sqlite3.IntegrityError:
+    except pymysql.IntegrityError:
         pass
