@@ -26,7 +26,7 @@ def Conn(config):
 
 def init(db, batch, YYYYMMDD):
     try:
-        conn = pymysql.connect(host="172.30.0.224",user="ozaki",password="Tenseibiku1",db="twitter")
+        conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxx",db=db)
         cursor = conn.cursor()
 
         table_users = """
@@ -181,7 +181,7 @@ def init(db, batch, YYYYMMDD):
         """
         cursor.execute(table_following_names)
         if batch:
-            table_tweets = f"""
+            table_tweets_batch = f"""
                 CREATE TABLE IF NOT EXISTS
                     tweets_disney_{YYYYMMDD}(
                         id integer not null,
@@ -218,7 +218,7 @@ def init(db, batch, YYYYMMDD):
                         PRIMARY KEY (id)
                     );
             """
-
+            cursor.execute(table_tweets_batch)
         return conn
     except Exception as e:
         return str(e)
