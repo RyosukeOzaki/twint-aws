@@ -36,7 +36,7 @@ class Twint:
             self.token = token.Token(config)
         if not self.config.Guest_token:
             self.token.refresh()
-        self.conn = db.Conn(config.Database)
+        self.conn = db.Conn(config)
         self.d = datelock.Set(self.config.Until, self.config.Since)
         verbose.Elastic(config.Elasticsearch)
 
@@ -308,7 +308,7 @@ class Twint:
                 logme.debug(__name__ + ':Twint:Lookup:user_id')
                 self.config.Username = await get.Username(self.config.User_id, self.config.Bearer_token,
                                                           self.config.Guest_token)
-            await get.User(self.config.Username, self.config, db.Conn(self.config.Database))
+            await get.User(self.config.Username, self.config, db.Conn(self.config))
 
         except Exception as e:
             logme.exception(__name__ + ':Twint:Lookup:Unexpected exception occurred.')
