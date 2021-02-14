@@ -7,9 +7,13 @@ import requests
 from requests import Request
 from torpy.http.requests import tor_requests_session as tor_session
 from torpy.circuit import CellTimeoutError
+
+
 class TokenExpiryException(Exception):
     def __init__(self, msg):
         super().__init__(msg)
+
+
 class Token:
     def __init__(self, config):
         self._session = None
@@ -18,6 +22,7 @@ class Token:
         self._timeout = 10
         self.url = 'https://twitter.com'
         self._get_new_session()
+    
     # TODO: would need to modify this when twint proxy feature is implemented here, so that correct proxy is used
     def _get_new_session(self, session_type=None):
         if self._session is not None:
@@ -37,6 +42,7 @@ class Token:
                 self._session.proxies['http'] = os.environ['http_proxy']
             if 'https_proxy' in os.environ:
                 self._session.proxies['https'] = os.environ['https_proxy']
+    
     def _request(self):
         for attempt in range(self._retries + 1):
             # The request is newly prepared on each retry because of potential cookie updates.
@@ -52,7 +58,7 @@ class Token:
                         res = f.send(twitter_request).text
                 else:
                     res = requests.get(self.url, timeout=self._timeout).text
-            except (CellTimeoutError, TimeoutError, requests.exceptions.ConnectTimeout) as exc:
+            except (CellTimeoutError, TimeoutError, RuntimeError, requests.exceptions.ConnectTimeout) as exc:
                 if attempt < self._retries:
                     self._get_new_session('tor')
                     retrying = ', retrying'
@@ -82,6 +88,7 @@ class Token:
                 logme.fatal(__name__ + ":" + msg)
                 self.config.Guest_token = None
                 return 0  # failure
+    
     def refresh(self):
         logme.debug(__name__ + ':Retrieving guest token')
         if not self._request():
