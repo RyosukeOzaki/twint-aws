@@ -8,11 +8,7 @@ from datetime import datetime
 def Conn(database):
     if database:
         print("[+] Inserting into Database mysql: " + str(database))
-<<<<<<< HEAD
         conn = pymysql.connect(host="172.30.0.224",user="ozaki",password="Tenseibiku1",db="twitter")
-=======
-        conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxxx",db="twitter")
->>>>>>> 3247a8603ea696505ce668db3b3555a3b6ef5576
         print("conection done...");
         #conn = init(database)
         #if isinstance(conn, str):
@@ -25,11 +21,7 @@ def Conn(database):
 
 def init(db):
     try:
-<<<<<<< HEAD
         conn = pymysql.connect(host="172.30.0.224",user="ozaki",password="Tenseibiku1",db="twitter")
-=======
-        conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxxx",db="twitter")
->>>>>>> 3247a8603ea696505ce668db3b3555a3b6ef5576
         cursor = conn.cursor()
 
         table_users = """
