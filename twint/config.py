@@ -28,6 +28,8 @@ class Config:
     Count: Optional[int] = None
     Stats: bool = False
     Database: object = None
+    Batch = False
+    YYYYDDMM = None
     To: str = None
     All = None
     Debug: bool = False
