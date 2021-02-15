@@ -25,25 +25,25 @@ def Conn(config):
     return conn
 
 def init(db, batch, YYYYMMDD):
-    conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxx",db=db)
+    conn = pymysql.connect(host="xxx.xxx.xxx.xxx",user="root",password="xxxxxxxx",db="twitter")
     cursor = conn.cursor()
     if batch:
         table_tweets_batch = f"""
                 CREATE TABLE IF NOT EXISTS
                     tweets_disney_{YYYYMMDD}(
-                        id integer not null,
+                        id bigint not null,
                         id_str text not null,
                         tweet text default '',
-                        conversation_id text not null,
-                        created_at integer not null,
-                        date text not null,
-                        time text not null,
+                        conversation_id bigint not null,
+                        created_at date not null,
+                        date date not null,
+                        time time not null,
                         timezone text not null,
                         place text default '',
                         replies_count integer,
                         likes_count integer,
                         retweets_count integer,
-                        user_id integer not null,
+                        user_id bigint not null,
                         user_id_str text not null,
                         screen_name text not null,
                         name text default '',
@@ -59,18 +59,18 @@ def init(db, batch, YYYYMMDD):
                         near text,
                         source text,
                         time_update integer not null,
-                        `translate` text default '',
+                        translate text default '',
                         trans_src text default '',
                         trans_dest text default '',
                         PRIMARY KEY (id)
                     );
-            """
+                """
         cursor.execute(table_tweets_batch)
     try:
         table_users = """
             CREATE TABLE IF NOT EXISTS
                 users(
-                    id integer not null,
+                    id bigint not null,
                     id_str text not null,
                     name text,
                     username text not null,
@@ -98,19 +98,19 @@ def init(db, batch, YYYYMMDD):
         table_tweets = """
             CREATE TABLE IF NOT EXISTS
                 tweets(
-                    id integer not null,
+                    id bigint not null,
                     id_str text not null,
                     tweet text default '',
-                    conversation_id text not null,
-                    created_at integer not null,
-                    date text not null,
-                    time text not null,
+                    conversation_id bigint not null,
+                    created_at date not null,
+                    date date not null,
+                    time time not null,
                     timezone text not null,
                     place text default '',
                     replies_count integer,
                     likes_count integer,
                     retweets_count integer,
-                    user_id integer not null,
+                    user_id bigint not null,
                     user_id_str text not null,
                     screen_name text not null,
                     name text default '',
@@ -126,7 +126,7 @@ def init(db, batch, YYYYMMDD):
                     near text,
                     source text,
                     time_update integer not null,
-                    `translate` text default '',
+                    translate text default '',
                     trans_src text default '',
                     trans_dest text default '',
                     PRIMARY KEY (id)
@@ -137,9 +137,9 @@ def init(db, batch, YYYYMMDD):
         table_retweets = """
             CREATE TABLE IF NOT EXISTS
                 retweets(
-                    user_id integer not null,
+                    user_id bigint not null,
                     username text not null,
-                    tweet_id integer not null,
+                    tweet_id bigint not null,
                     retweet_id integer not null,
                     retweet_date integer not null,
                     CONSTRAINT retweets_pk PRIMARY KEY(user_id, tweet_id),
@@ -152,8 +152,8 @@ def init(db, batch, YYYYMMDD):
         table_reply_to = """
             CREATE TABLE IF NOT EXISTS
                 replies(
-                    tweet_id integer not null,
-                    user_id integer not null,
+                    tweet_id bigint not null,
+                    user_id bigint not null,
                     username text not null,
                     CONSTRAINT replies_pk PRIMARY KEY (user_id, tweet_id),
                     CONSTRAINT tweet_id_fk FOREIGN KEY (tweet_id) REFERENCES tweets(id)
@@ -164,8 +164,8 @@ def init(db, batch, YYYYMMDD):
         table_favorites =  """
             CREATE TABLE IF NOT EXISTS
                 favorites(
-                    user_id integer not null,
-                    tweet_id integer not null,
+                    user_id bigint not null,
+                    tweet_id bigint not null,
                     CONSTRAINT favorites_pk PRIMARY KEY (user_id, tweet_id),
                     CONSTRAINT user_id_fk FOREIGN KEY (user_id) REFERENCES users(id),
                     CONSTRAINT tweet_id_fk FOREIGN KEY (tweet_id) REFERENCES tweets(id)
@@ -176,8 +176,8 @@ def init(db, batch, YYYYMMDD):
         table_followers = """
             CREATE TABLE IF NOT EXISTS
                 followers (
-                    id integer not null,
-                    follower_id integer not null,
+                    id bigint not null,
+                    follower_id bigint not null,
                     CONSTRAINT followers_pk PRIMARY KEY (id, follower_id),
                     CONSTRAINT id_fk FOREIGN KEY(id) REFERENCES users(id),
                     CONSTRAINT follower_id_fk FOREIGN KEY(follower_id) REFERENCES users(id)
@@ -188,8 +188,8 @@ def init(db, batch, YYYYMMDD):
         table_following = """
             CREATE TABLE IF NOT EXISTS
                 following (
-                    id integer not null,
-                    following_id integer not null,
+                    id bigint not null,
+                    following_id bigint not null,
                     CONSTRAINT following_pk PRIMARY KEY (id, following_id),
                     CONSTRAINT id_fk FOREIGN KEY(id) REFERENCES users(id),
                     CONSTRAINT following_id_fk FOREIGN KEY(following_id) REFERENCES users(id)
@@ -218,6 +218,7 @@ def init(db, batch, YYYYMMDD):
                 );
         """
         cursor.execute(table_following_names)
+
         return conn
     except Exception as e:
         return str(e)
@@ -349,7 +350,7 @@ def tweets(conn, Tweet, config):
                 _d = get_datetime(Tweet.retweet_date)
             except ValueError as err:
                 if Tweet.retweet_date.endswith(' WITA'):
-                    # LOGGER.exception(err)
+                    LOGGER.exception(err)
                     _d = get_datetime(Tweet.retweet_date.rsplit(' WITA', 1)[0])
                 else:
                     raise err
@@ -369,7 +370,7 @@ def tweets(conn, Tweet, config):
                         return dict_inp[key]
                     except KeyError as err:
                         if key not in dict_inp:
-                            LOGGER.exception(err)
+                            # LOGGER.exception(err)
                             return default_value
                         else:
                             raise err
