@@ -293,12 +293,12 @@ def tweets(conn, Tweet, config):
         try:
             mentions = ",".join(Tweet.mentions)
         except TypeError as err:
-            LOGGER.exception(err)
+            # LOGGER.exception(err)
             mentions = json.dumps(Tweet.mentions)
         try:
             place = ",".join(Tweet.place)
         except TypeError as err:
-            LOGGER.exception(err)
+            # LOGGER.exception(err)
             place = json.dumps(Tweet.place)
         entry = (Tweet.id,
                     Tweet.id_str,
@@ -349,7 +349,7 @@ def tweets(conn, Tweet, config):
                 _d = get_datetime(Tweet.retweet_date)
             except ValueError as err:
                 if Tweet.retweet_date.endswith(' WITA'):
-                    LOGGER.exception(err)
+                    # LOGGER.exception(err)
                     _d = get_datetime(Tweet.retweet_date.rsplit(' WITA', 1)[0])
                 else:
                     raise err
