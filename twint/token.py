@@ -26,13 +26,13 @@ class Token:
     # TODO: would need to modify this when twint proxy feature is implemented here, so that correct proxy is used
     def _get_new_session(self, session_type=None):
         if self._session is not None:
-            logme.debug(__name__ + ':closing old session to create a new one')
+            # logme.debug(__name__ + ':closing old session to create a new one')
             try:
                 self._session.close()
             except AttributeError:
                 pass
         if session_type == 'tor' or self.config.Tor_guest:
-            logme.info(__name__ + ':[TOR SESSION] Creating new TOR Session. Please give it a couple of seconds...')
+            # logme.info(__name__ + ':[TOR SESSION] Creating new TOR Session. Please give it a couple of seconds...')
             print('[TOR SESSION] Creating new TOR Session. Please give it a couple of seconds...')
             self._session = tor_session(hops_count=2)
             self.config.Tor_guest = True
@@ -46,11 +46,11 @@ class Token:
     def _request(self):
         for attempt in range(self._retries + 1):
             # The request is newly prepared on each retry because of potential cookie updates.
-            logme.debug(__name__ + f':Retrieving {self.url}')
+            # logme.debug(__name__ + f':Retrieving {self.url}')
             twitter_request = Request('GET', self.url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0'}).prepare()
             try:
                 if self.config.Tor_guest:
-                    logme.debug(__name__ + ':using TOR to fetch the Guest Token.')
+                    # logme.debug(__name__ + ':using TOR to fetch the Guest Token.')
                     if self.config.Debug:
                         with self._session as f:
                             logme.debug(__name__ + f":IP: {f.send(Request('GET', 'https://ident.me').prepare()).text}")
