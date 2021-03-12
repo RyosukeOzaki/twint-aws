@@ -33,7 +33,7 @@ class Token:
                 pass
         if session_type == 'tor' or self.config.Tor_guest:
             # logme.info(__name__ + ':[TOR SESSION] Creating new TOR Session. Please give it a couple of seconds...')
-            print('[TOR SESSION] Creating new TOR Session. Please give it a couple of seconds...')
+            # print('[TOR SESSION] Creating new TOR Session. Please give it a couple of seconds...')
             self._session = tor_session(hops_count=2)
             self.config.Tor_guest = True
         else:
